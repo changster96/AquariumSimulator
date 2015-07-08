@@ -2,9 +2,271 @@
 <html>
 <body>
 
-<h1>My First Heading</h1>
+<canvas id="myCanvas">
+Your browser does not support the canvas element.
+</canvas>
 
-<p>My first paragraph.</p>
+<style>
+html, body {
+  width:  100%;
+  height: 100%;
+  margin: 0px;
+  overflow: hidden;
+}
+</style>
+
+<script>
+
+function Donut(x, y) {
+
+	this.type = "Donut";
+	
+	this.x = x;
+	this.y = y;
+	this.mass = 10;
+	
+	this.move = function() {
+		// Attempts movement, environment permitting
+		return [0, 100];
+	}
+	
+	this.draw = function() {
+		console.log("drawing fish", fish);
+		ctx.strokeStyle = "#880000";
+		ctx.beginPath();
+		ctx.arc( this.x , this.y , 3 , 0 , 2 * Math.PI);
+		ctx.stroke();
+	}
+}
+
+function Fish(x, y, dx, dy) {
+	
+	this.type = "Fish";
+	
+	this.x = x;
+	this.y = y;
+	this.dx = 0;
+	this.dy = 0;
+	this.ddx = 0;
+	this.ddy = 0;
+	this.danger_sense = Math.random() * 100 + 150;
+	this.top_accel = Math.random() * 1000 + 1000;
+	this.mass = Math.random() * 30 + 30
+	
+	this.move = function() {
+		// Attempts movement
+		
+		this.dx *= 0.95;
+		this.dy *= 0.95;
+		if (this.mass > 100) {this.mass *= 0.999;}
+		
+		// Find best food
+		best_direction = [0, 0];
+		best_food_score = -1;
+		for (id in entities) {
+			if (entities[id].mass < this.mass / 2) {
+				distance = Math.sqrt(Math.pow(entities[id].x - this.x, 2) +
+									 Math.pow(entities[id].y - this.y, 2));
+				if ((distance < best_food_score) || (best_food_score == -1)) {
+					best_food_score = distance;
+					best_direction = [entities[id].x - this.x, entities[id].y - this.y];
+				}
+			}
+		}
+		
+		// But avoid death
+		best_danger_score = this.danger_sense
+		for (id in entities) {
+			if (entities[id].mass > this.mass * 2) {
+				distance = Math.sqrt(Math.pow(entities[id].x - this.x, 2) +
+									 Math.pow(entities[id].y - this.y, 2));
+				
+				if (distance < best_danger_score) {
+					best_danger_score = distance;
+					best_food_score = -1;
+					best_direction = [(entities[id].x - this.x) * -1,
+									  (entities[id].y - this.y) * -1];
+				}
+			}
+		}
+		
+		if (best_food_score != -1) {
+			this.ddx = best_direction[0] / best_food_score * this.top_accel;
+			this.ddy = best_direction[1] / best_food_score * this.top_accel;
+			this.dx += this.ddx / Math.sqrt(this.mass) * elapsed_time;
+			this.dy += this.ddy / Math.sqrt(this.mass) * elapsed_time;
+			return [this.dx, this.dy];
+		} else if (best_danger_score < this.danger_sense) {
+			this.ddx = best_direction[0] / best_danger_score * this.top_accel;
+			this.ddy = best_direction[1] / best_danger_score * this.top_accel;
+			this.dx += this.ddx / Math.sqrt(this.mass) * elapsed_time;
+			this.dy += this.ddy / Math.sqrt(this.mass) * elapsed_time;
+			return [this.dx, this.dy];
+		} else {
+			return [this.dx, this.dy];
+		}
+	}
+	
+	this.draw = function() {
+	
+		radius = Math.sqrt(this.mass);
+		
+		if (this.ddx >= 0) {
+			ori = 1;
+		} else {
+			ori = -1;
+		}
+		
+		var tail = new Path2D();
+		ctx.fillStyle = "#FF0000";
+		tail.moveTo(this.x , this.y);
+		tail.lineTo( this.x + radius * -2 * ori, this.y + radius * 1);
+		tail.lineTo( this.x + radius * -2 * ori, this.y + radius * -1);
+		ctx.fill(tail);
+		
+		var tail2 = new Path2D();
+		ctx.fillStyle = "#FFA500";
+		tail2.moveTo(this.x , this.y);
+		tail2.lineTo( this.x + radius * -1.8 * ori, this.y + radius * 0.9);
+		tail2.lineTo( this.x + radius * -1.8 * ori, this.y + radius * -0.9);
+		ctx.fill(tail2);
+		
+		var fin = new Path2D();
+		ctx.fillStyle = "#FFA500";
+		fin.moveTo( this.x + radius * -1 * ori, this.y + radius * 1.5);
+		fin.lineTo( this.x + radius * -0.5 * ori, this.y + radius * 0);
+		fin.lineTo( this.x + radius * -1 * ori, this.y + radius * -1.5);
+		fin.lineTo( this.x + radius * 0 * ori, this.y + radius * -1);
+		fin.lineTo( this.x + radius * 0 * ori, this.y + radius * 1);
+		ctx.fill(fin);
+		
+		ctx.fillStyle = "#FFA500";
+		ctx.beginPath();
+		ctx.arc( this.x , this.y , radius , 0 , 2 * Math.PI );
+		ctx.fill();
+		
+		ctx.fillStyle = "#FFFFFF";
+		ctx.beginPath();
+		ctx.arc( this.x + radius * 0.5 * ori, this.y + radius * -0.5, radius / 4, 0 , 2 * Math.PI );
+		ctx.fill();
+		
+		ctx.fillStyle = "#000000";
+		ctx.beginPath();
+		ctx.arc( this.x + radius * 0.6 * ori, this.y + radius * -0.6, radius / 8, 0 , 2 * Math.PI );
+		ctx.fill();
+		
+	}
+	
+}
+
+function update() {
+
+	// get frame time difference
+	current_frame_time = new Date();
+	elapsed_time = (current_frame_time - last_frame_time) / 1000;
+	console.log("made it!" + elapsed_time);
+
+	//move fish
+	for (fish in entities) {
+		
+		attempted_move = entities[fish].move();
+		new_x = entities[fish].x + attempted_move[0] * elapsed_time;
+		new_y = entities[fish].y + attempted_move[1] * elapsed_time;
+		
+		entities[fish].x = (new_x + window.innerWidth) % window.innerWidth;
+		
+		if (new_y < TANK_MARGIN) {
+			entities[fish].y = TANK_MARGIN;
+		} else if (new_y > window.innerHeight - TANK_MARGIN) {
+			entities[fish].y = window.innerHeight - TANK_MARGIN;
+		} else {
+			entities[fish].y = new_y;
+		}
+		
+		console.log("pos x" + new_x + " y" + new_y);
+		
+	}
+	
+	// collision detection
+	for (id_1 in entities) {
+		if (entities[id_1].type === "Fish") {
+			for (id_2 in entities) {
+				if (entities[id_2].mass < entities[id_1].mass / 2) {
+					distance = Math.sqrt(Math.pow(entities[id_1].x - entities[id_2].x, 2) +
+										 Math.pow(entities[id_1].y - entities[id_2].y, 2));
+					if (distance < Math.sqrt(entities[id_1].mass)) {
+						// Eaten!
+						entities[id_1].mass += entities[id_2].mass;
+						entities.splice(id_2, 1);
+					}
+				}
+			}
+		}
+	}
+	
+	// clear screen
+	ctx.fillStyle = "#334D66";
+	ctx.fillRect( 0 , 0 , window.innerWidth , window.innerHeight );
+	
+	// draw fish
+	for (fish in entities) {
+		entities[fish].draw();
+	}	
+	
+	last_frame_time = current_frame_time;
+	
+}
+
+function add_fish() {
+	entities.push(new Fish(50, 50, 100, 200));
+}
+
+function supply_fish() {
+
+	fish_count = 0;
+	for (id in entities) {
+		if (entities[id].type === "Fish") {
+			fish_count++;
+		}
+	}
+	
+	if (fish_count < 150) {
+		entities.push(new Fish(Math.random() * window.innerWidth,
+							   Math.random() * window.innerWidth,
+							   0, 0));
+	}
+	
+}
+
+function add_donut() {
+	entities.push(new Donut(50, 50))
+}
+
+function mouse_down(event) {
+	canvas_x = event.x - canvas.offsetLeft;
+	canvas_y = event.y - canvas.offsetTop;
+	entities.push(new Donut(canvas_x, canvas_y));
+}
+
+var canvas = document.getElementById("myCanvas");
+canvas.addEventListener('click', mouse_down, false);
+canvas.onmousedown = function(){return false;}; // stops double-click problem
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+var ctx = canvas.getContext("2d");
+
+var entities = [];
+
+var TANK_MARGIN = 25;
+var last_frame_time = new Date();
+
+var i = 0;
+setInterval(update, 16)
+var fish_adder = setInterval(supply_fish, 10)
+
+</script>
 
 </body>
 </html>
+
