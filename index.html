@@ -27,7 +27,7 @@ function Donut(x, y) {
 	
 	this.move = function() {
 		// Attempts movement, environment permitting
-		return [0, 100];
+		return [0, 50];
 	}
 	
 	this.draw = function() {
@@ -51,16 +51,21 @@ function Fish(x, y, dx, dy) {
 	
 	this.eyesight = 250 + Math.random() * 250;
 	this.hunger = Math.random() * 10000;
-	this.socialness = Math.random() * 100 - 50;
-	this.danger_sense = Math.random() * 10000;
+	this.socialness = Math.random() * 50 - 25;
+	this.personalspace = Math.random() * 150;
+	this.danger_sense = Math.random() * 1000000;
 	this.top_accel = Math.random() * 1000 + 1000;
-	this.mass = Math.random() * 30 + 30
+	this.mass = Math.random() * 20 + 30
+	
+	tail_colors = ["#FF0000", "#FF00FF", "#0000FF"];
+	this.body_color = "#FFA500";
+	this.tail_color = tail_colors[Math.floor(Math.random()*tail_colors.length)]
 	
 	this.move = function() {
 		// Attempts movement
 		
-		this.dx *= 0.95;
-		this.dy *= 0.95;
+		this.dx *= 0.9;
+		this.dy *= 0.9;
 		if (this.mass > 100) {this.mass *= 0.999;}
 		
 		best_direction = [0, 0];
@@ -87,19 +92,27 @@ function Fish(x, y, dx, dy) {
 			if ((distance > 0) && (distance < this.eyesight)) {
 				if ((entities[id].type == "Donut") || (entities[id].mass < this.mass / 2)) {
 					// target is edible!
-					
-					best_direction[0] += (x_distance) * entities[id].mass / distance * this.hunger;
-					best_direction[1] += (y_distance) * entities[id].mass / distance * this.hunger;
+					coefficient = entities[id].mass / distance * this.hunger;
+					best_direction[0] += x_distance * coefficient;
+					best_direction[1] += y_distance * coefficient;
 				} else if ((entities[id].mass > this.mass / 2) && (entities[id].mass < this.mass * 2) && (entities[id].mass != this.mass)) {
 					// target is just there I guess
+					coefficient = 0;
+					if (distance > (this.personalspace + entities[id].personalspace)) {
+						coefficient += (this.socialness + entities[id].socialness) / distance;
+						if (this.tail_color == entities[id].tail_color) {
+							// import racism
+							coefficient += Math.abs(coefficient * 0.5);
+						}
+					}
 					
-					best_direction[0] += (x_distance) * this.socialness / distance;
-					best_direction[1] += (y_distance) * this.socialness / distance;
+					best_direction[0] += x_distance * coefficient;
+					best_direction[1] += y_distance * coefficient;
 				}  else {
 					// target can eat this!
-					
-					best_direction[0] += -1 * (x_distance) * Math.sqrt(entities[id].mass) / distance * this.danger_sense;
-					best_direction[1] += -1 * (y_distance) * Math.sqrt(entities[id].mass) / distance * this.danger_sense;
+					coefficient =  -1 * this.danger_sense / Math.pow(distance, 2);
+					best_direction[0] += x_distance * coefficient;
+					best_direction[1] += y_distance * coefficient;
 				}
 			}
 		}
@@ -138,14 +151,14 @@ function Fish(x, y, dx, dy) {
 		tail.moveTo(this.x , this.y);
 		tail.lineTo( this.x + radius * -2 * ori, this.y + radius * 1);
 		tail.lineTo( this.x + radius * -2 * ori, this.y + radius * -1);
-		ctx.fillStyle = "#FF0000";
+		ctx.fillStyle = this.tail_color;
 		ctx.fill(tail);
 		
 		var tail2 = new Path2D();
 		tail2.moveTo(this.x , this.y);
-		tail2.lineTo( this.x + radius * -1.8 * ori, this.y + radius * 0.9);
-		tail2.lineTo( this.x + radius * -1.8 * ori, this.y + radius * -0.9);
-		ctx.fillStyle = "#FFA500";
+		tail2.lineTo( this.x + radius * -1.6 * ori, this.y + radius * 0.8);
+		tail2.lineTo( this.x + radius * -1.6 * ori, this.y + radius * -0.8);
+		ctx.fillStyle = this.body_color;
 		ctx.fill(tail2);
 		
 		var fin = new Path2D();
@@ -154,13 +167,13 @@ function Fish(x, y, dx, dy) {
 		fin.lineTo( this.x + radius * -1 * ori, this.y + radius * -1.5);
 		fin.lineTo( this.x + radius * 0 * ori, this.y + radius * -1);
 		fin.lineTo( this.x + radius * 0 * ori, this.y + radius * 1);
-		ctx.fillStyle = "#FFA500";
+		ctx.fillStyle = this.body_color;
 		ctx.fill(fin);
 		
 		// Fish head
 		ctx.beginPath();
 		ctx.arc( this.x , this.y , radius , 0 , 2 * Math.PI );
-		ctx.fillStyle = "#FFA500";
+		ctx.fillStyle = this.body_color;
 		ctx.fill();
 		
 		// Fish eyeball
@@ -203,7 +216,7 @@ function update() {
 	for (id_1 in entities) {
 		if (entities[id_1].type === "Fish") {
 			for (id_2 in entities) {
-				if (entities[id_2].mass < entities[id_1].mass / 2) {
+				if ((entities[id_2].mass < entities[id_1].mass / 2) || (entities[id_2].type == "Donut")) {
 					distance = Math.sqrt(Math.pow(entities[id_1].x - entities[id_2].x, 2) +
 										 Math.pow(entities[id_1].y - entities[id_2].y, 2));
 					if (distance < Math.sqrt(entities[id_1].mass)) {
@@ -266,7 +279,7 @@ function random_feed() {
 
 function toggle_autofeeder() {
 	if (!auto_feed) {
-		auto_feed = setInterval(random_feed, 100);
+		auto_feed = setInterval(random_feed, 250);
 	} else {
 		clearInterval(auto_feed);
 		auto_feed = null;
@@ -291,6 +304,7 @@ var i = 0;
 
 var updater = setInterval(update, 16)
 var fish_adder = setInterval(supply_fish, 10)
+
 var auto_feed = false;
 
 var fish_max_pop = 150;
