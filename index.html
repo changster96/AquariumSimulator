@@ -14,171 +14,43 @@ html, body {
   overflow: hidden;
 }
 </style>
-
+<script src="classes.js"></script>
 <script>
-
-// Defining classes:
-
-function Donut(x, y) {
-
-	this.type = "Donut";
-	
-	this.x = x;
-	this.y = y;
-	this.mass = 100;
-	
-	this.move = function() {
-		// Attempts movement, environment permitting
-		return [0, 50];
-	}
-	
-	this.draw = function() {
-		ctx.strokeStyle = "#880000";
-		ctx.beginPath();
-		ctx.arc( this.x , this.y , 3 , 0 , 2 * Math.PI);
-		ctx.stroke();
-	}
-}
-
-function Fish(x, y, dx, dy) {
-	
-	this.type = "Fish";
-	
-	this.x = x;
-	this.y = y;
-	this.dx = 0;
-	this.dy = 0;
-	this.ddx = 0;
-	this.ddy = 0;
-	
-	this.eyesight = 250 + Math.random() * 250 + Math.random() * 250;
-	this.hunger = Math.random() * 10000;
-	this.socialness = 0.5;
-	this.personalspace = Math.random() * 75 + Math.random() * 75;
-	this.danger_sense = Math.random() * 500000 + Math.random() * 500000;
-	this.top_accel = Math.random() * 1000 + 1000;
-	this.mass = Math.random() * 20 + Math.random() * 20 + 10;
-	this.move_timer = [0, 0.2 + Math.random() * 0.3]; // Zero out of one second
-	
-	tail_colors = ["#FF0000", "#FF00FF", "#0000FF"];
-	this.body_color = "#FFA500";
-	this.tail_color = tail_colors[Math.floor(Math.random()*tail_colors.length)]
-	
-	this.move = function() {
-		this.dx *= 0.95;
-		this.dy *= 0.95;
-		if (this.mass > 100) {this.mass *= 0.999;}
-		this.move_timer[0] += elapsed_time;
-		if (this.move_timer[0] > this.move_timer[1]) {
-			best_move = this.find_move();
-			this.move_timer[0] = 0;
-			return best_move;
-		}
-		return [this.dx, this.dy];
-	}
-	
-	this.find_move = function() {
-		// Attempts movement
-		
-		
-		
-		best_direction = [0, 0];
-		
-		for (id in entities) {
-			x_distance = entities[id].x - this.x;
-			y_distance = entities[id].y - this.y;
-			
-			if (x_distance > window.innerWidth / 2) {
-				x_distance = x_distance - window.innerWidth;
-			} else if (x_distance < -1 * window.innerWidth / 2) {
-				x_distance = x_distance + window.innerWidth;
-			}
-			
-			if (y_distance > window.innerHeight / 2) {
-				y_distance = y_distance - window.innerHeight;
-			} else if (y_distance < -1 * window.innerHeight / 2) {
-				y_distance = y_distance + window.innerHeight;
-			}
-			
-		    distance = Math.sqrt(Math.pow(x_distance, 2) +
-				                 Math.pow(y_distance, 2));
-								 
-			if ((distance > 0) && (distance < this.eyesight)) {
-				if (this.determine_action(entities[id]) == "Eat") {
-					// target is edible!
-					coefficient = entities[id].mass / distance * this.hunger;
-					best_direction[0] += x_distance * coefficient;
-					best_direction[1] += y_distance * coefficient;
-				} else if (this.determine_action(entities[id]) == "Flee"){
-					// target can eat this!
-					coefficient =  -1 * this.danger_sense / Math.pow(distance, 2);
-					best_direction[0] += x_distance * coefficient;
-					best_direction[1] += y_distance * coefficient;
-				} else {
-					// target is just there I guess
-					coefficient = 0;
-					if (distance > (this.personalspace + entities[id].personalspace)) {
-						coefficient += (this.socialness + entities[id].socialness) * entities[id].mass / distance;
-						if (this.tail_color == entities[id].tail_color) {
-							// import racism
-							coefficient += Math.abs(coefficient * 0.5);
-						}
-					}
-					
-					best_direction[0] += x_distance * coefficient;
-					best_direction[1] += y_distance * coefficient;
-				} 
-			}
-		}
-		
-		best_direction_power = Math.sqrt(Math.pow(best_direction[0], 2) + 
-										 Math.pow(best_direction[1], 2));
-		if (best_direction_power != this.top_accel) {
-			best_direction[0] = best_direction[0] * this.top_accel / best_direction_power;
-			best_direction[1] = best_direction[1] * this.top_accel / best_direction_power;
-		}
-		
-		this.ddx = best_direction[0];
-		this.ddy = best_direction[1];
-		this.dx += this.ddx / Math.pow(this.mass, 0.75) * this.move_timer[0];
-		this.dy += this.ddy / Math.pow(this.mass, 0.75) * this.move_timer[0];
-		
-		return [this.dx, this.dy];
-	}
-	
-	this.determine_action = function(target) {
-		/* Returns "Eat", "Flee", or "Socialize" */
-		if ((target.type == "Donut") || (target.mass < this.mass / 2)) {
-			return "Eat";
-		} else if (target.tail_color == this.tail_color) {
-			return "Socialize";
-		} else if (target.mass > this.mass * 2) {
-			return "Flee";
-		} else {
-			return "Socialize";
-		}
-	}
-	
-	this.draw = function() {
-		draw_fish(this);
-	}
-	
-}
 
 // Environment methods
 
-function update() {
+var dt = 1.0 / 20;
+var t = 0.0;
+var accumulator = 0.0;
 
-	// get frame time difference
-	current_frame_time = new Date();
-	elapsed_time = (current_frame_time - last_frame_time) / 1000;
+function main_loop()
+{
+	new_time = new Date();
+    frame_time = (new_time - current_time) / 1000;
+	
+    if ( frame_time > 0.1 )
+        frame_time = 0.1;
+    current_time = new_time;
+
+    accumulator += frame_time;
+    while ( accumulator >= dt )
+    {
+        update(0.1);
+        t += dt;
+        accumulator -= dt;
+    }
+	draw(accumulator);
+}
+
+
+function update(dt) {
 
 	//move fish
 	for (fish in entities) {
 		
-		attempted_move = entities[fish].move();
-		new_x = entities[fish].x + attempted_move[0] * elapsed_time;
-		new_y = entities[fish].y + attempted_move[1] * elapsed_time;
+		attempted_move = entities[fish].move(dt);
+		new_x = entities[fish].x + attempted_move[0] * dt;
+		new_y = entities[fish].y + attempted_move[1] * dt;
 		
 		entities[fish].x = (new_x + window.innerWidth) % window.innerWidth;
 		entities[fish].y = (new_y + window.innerHeight) % window.innerHeight;
@@ -205,17 +77,21 @@ function update() {
 	// clear screen
 	ctx.fillStyle = "#334D66";
 	ctx.fillRect( 0 , 0 , window.innerWidth , window.innerHeight );
+
+}
+
+function draw(acculumator) {
 	
 	// draw fish
 	for (fish in entities) {
-		entities[fish].draw();
+		entities[fish].draw(acculumator);
 	}	
 	
-	last_frame_time = current_frame_time;
+	
 	
 }
 
-function draw_fish(fish) {
+function draw_fish(fish, accumulator) {
 	radius = Math.sqrt(fish.mass);
 	
 	var ori = 1;
@@ -226,45 +102,50 @@ function draw_fish(fish) {
 	} else {
 		ori = -1;
 	}
-		
+	
+	adjusted_x = fish.x + fish.dx * accumulator + 0.5 * fish.ddx * Math.pow(accumulator, 2);
+	adjusted_y = fish.y + fish.dy * accumulator + 0.5 * fish.ddy * Math.pow(accumulator, 2);
+	//adjusted_x = fish.x;
+	//adjusted_y = fish.y;	
+	
 	var tail = new Path2D();
-	tail.moveTo(fish.x , fish.y);
-	tail.lineTo( fish.x + radius * -2 * ori, fish.y + radius * 1);
-	tail.lineTo( fish.x + radius * -2 * ori, fish.y + radius * -1);
+	tail.moveTo(adjusted_x , adjusted_y);
+	tail.lineTo( adjusted_x + radius * -2 * ori, adjusted_y + radius * 1);
+	tail.lineTo( adjusted_x + radius * -2 * ori, adjusted_y + radius * -1);
 	ctx.fillStyle = fish.tail_color;
 	ctx.fill(tail);
 		
 	var tail2 = new Path2D();
-	tail2.moveTo(fish.x , fish.y);
-	tail2.lineTo( fish.x + radius * -1.6 * ori, fish.y + radius * 0.8);
-	tail2.lineTo( fish.x + radius * -1.6 * ori, fish.y + radius * -0.8);
+	tail2.moveTo(adjusted_x , adjusted_y);
+	tail2.lineTo( adjusted_x + radius * -1.6 * ori, adjusted_y + radius * 0.8);
+	tail2.lineTo( adjusted_x + radius * -1.6 * ori, adjusted_y + radius * -0.8);
 	ctx.fillStyle = fish.body_color;
 	ctx.fill(tail2);
 		
 	var fin = new Path2D();
-	fin.moveTo( fish.x + radius * -1 * ori, fish.y + radius * 1.5);
-	fin.lineTo( fish.x + radius * -0.5 * ori, fish.y + radius * 0);
-	fin.lineTo( fish.x + radius * -1 * ori, fish.y + radius * -1.5);
-	fin.lineTo( fish.x + radius * 0 * ori, fish.y + radius * -1);
-	fin.lineTo( fish.x + radius * 0 * ori, fish.y + radius * 1);
+	fin.moveTo( adjusted_x + radius * -1 * ori, adjusted_y + radius * 1.5);
+	fin.lineTo( adjusted_x + radius * -0.5 * ori, adjusted_y + radius * 0);
+	fin.lineTo( adjusted_x + radius * -1 * ori, adjusted_y + radius * -1.5);
+	fin.lineTo( adjusted_x + radius * 0 * ori, adjusted_y + radius * -1);
+	fin.lineTo( adjusted_x + radius * 0 * ori, adjusted_y + radius * 1);
 	ctx.fillStyle = fish.body_color;
 	ctx.fill(fin);
 		
 	// Fish head
 	ctx.beginPath();
-	ctx.arc( fish.x , fish.y , radius , 0 , 2 * Math.PI );
+	ctx.arc( adjusted_x , adjusted_y , radius , 0 , 2 * Math.PI );
 	ctx.fillStyle = fish.body_color;
 	ctx.fill();
 		
 	// Fish eyeball
 	ctx.beginPath();
-	ctx.arc( fish.x + radius * 0.5 * ori, fish.y + radius * -0.5, radius / 4, 0 , 2 * Math.PI );
+	ctx.arc( adjusted_x + radius * 0.5 * ori, adjusted_y + radius * -0.5, radius / 4, 0 , 2 * Math.PI );
 	ctx.fillStyle = "#FFFFFF";
 	ctx.fill();
 		
 	// Fish pupil
 	ctx.beginPath();
-	ctx.arc( fish.x + radius * 0.6 * ori, fish.y + radius * -0.6, radius / 8, 0 , 2 * Math.PI );
+	ctx.arc( adjusted_x + radius * 0.6 * ori, adjusted_y + radius * -0.6, radius / 8, 0 , 2 * Math.PI );
 	ctx.fillStyle = "#000000";
 	ctx.fill();
 	
@@ -336,16 +217,16 @@ var ctx = canvas.getContext("2d");
 var entities = [];
 
 var TANK_MARGIN = 25;
-var last_frame_time = new Date();
+var current_time = new Date();
 
 var i = 0;
 
-var updater = setInterval(update, 16)
+var updater = setInterval(main_loop, 1)
 var fish_adder = setInterval(supply_fish, 10)
 
 var auto_feed = false;
 
-var fish_max_pop = 250;
+var fish_max_pop = 150;
 
 </script>
 
