@@ -11,3 +11,4 @@ An aquarium simulator to be used in conjunction with CodeSkulptor. (http://www.c
 3. Activities
   1. Survive (or not)
   2. Reproduce?
+4. Ecosystem
