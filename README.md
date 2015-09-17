@@ -1,5 +1,5 @@
 # AquariumSimulator
-An aquarium simulator to be used in conjunction with CodeSkulptor. (http://www.codeskulptor.org)
+A fun attempt to create a simulation of an ecosystem.
 # Steps to v.1
 1. Environment
   1. Tank Walls
