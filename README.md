@@ -1,5 +1,5 @@
 # AquariumSimulator
-A fun attempt to create a simulation of an ecosystem.
+A fun attempt to create a simulation of an ecosystem. Accessible at kc34.github.io/AquariumSimulator
 # Steps to v.1
 1. Environment
   1. Tank Walls
