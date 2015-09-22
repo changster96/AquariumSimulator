@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<canvas id="myCanvas">
+Your browser does not support the canvas element.
+</canvas>
+
+<style>
+html, body {
+  width:  100%;
+  height: 100%;
+  margin: 0px;
+  overflow: hidden;
+}
+</style>
+<script src="classes.js"></script>
+<script>
+
+// Environment methods
+
+var dt = 1.0 / 20;
+var t = 0.0;
+var accumulator = 0.0;
+
+function main_loop()
+{
+	new_time = new Date();
+    frame_time = (new_time - current_time) / 1000;
+	
+    if ( frame_time > 0.1 )
+        frame_time = 0.1;
+    current_time = new_time;
+
+    accumulator += frame_time;
+    while ( accumulator >= dt )
+    {
+        update(0.1);
+        t += dt;
+        accumulator -= dt;
+    }
+	draw(accumulator);
+}
+
+
+function update(dt) {
+
+	//move fish
+	for (fish in entities) {
+		
+		attempted_move = entities[fish].move(dt);
+		new_x = entities[fish].x + attempted_move[0] * dt;
+		new_y = entities[fish].y + attempted_move[1] * dt;
+		
+		entities[fish].x = (new_x + window.innerWidth) % window.innerWidth;
+		entities[fish].y = (new_y + window.innerHeight) % window.innerHeight;
+		
+	}
+	
+	// collision detection
+	for (id_1 in entities) {
+		if (entities[id_1].type === "Fish") {
+			for (id_2 in entities) {
+				if (canEat(entities[id_1], entities[id_2])) {
+					distance = Math.sqrt(Math.pow(entities[id_1].x - entities[id_2].x, 2) +
+										 Math.pow(entities[id_1].y - entities[id_2].y, 2));
+					if (distance < Math.sqrt(entities[id_1].mass)) {
+						// Eaten!
+						entities[id_1].mass += entities[id_2].mass;
+						entities.splice(id_2, 1);
+					}
+				}
+			}
+		}
+	}
+	
+	// clear screen
+	ctx.fillStyle = "#334D66";
+	ctx.fillRect( 0 , 0 , window.innerWidth , window.innerHeight );
+
+}
+
+function draw(acculumator) {
+	
+	// draw fish
+	for (fish in entities) {
+		entities[fish].draw(acculumator);
+	}	
+	
+	
+	
+}
+
+function draw_fish(fish, accumulator) {
+	radius = Math.sqrt(fish.mass);
+	
+	var ori = 1;
+	
+	// Determine orientation based on fish's force
+	if (fish.ddx >= 0) {
+		ori = 1;
+	} else {
+		ori = -1;
+	}
+	
+	adjusted_x = fish.x + fish.dx * accumulator + 0.5 * fish.ddx * Math.pow(accumulator, 2);
+	adjusted_y = fish.y + fish.dy * accumulator + 0.5 * fish.ddy * Math.pow(accumulator, 2);
+	//adjusted_x = fish.x;
+	//adjusted_y = fish.y;	
+	
+	var tail = new Path2D();
+	tail.moveTo(adjusted_x , adjusted_y);
+	tail.lineTo( adjusted_x + radius * -2 * ori, adjusted_y + radius * 1);
+	tail.lineTo( adjusted_x + radius * -2 * ori, adjusted_y + radius * -1);
+	ctx.fillStyle = fish.tail_color;
+	ctx.fill(tail);
+		
+	var tail2 = new Path2D();
+	tail2.moveTo(adjusted_x , adjusted_y);
+	tail2.lineTo( adjusted_x + radius * -1.6 * ori, adjusted_y + radius * 0.8);
+	tail2.lineTo( adjusted_x + radius * -1.6 * ori, adjusted_y + radius * -0.8);
+	ctx.fillStyle = fish.body_color;
+	ctx.fill(tail2);
+		
+	var fin = new Path2D();
+	fin.moveTo( adjusted_x + radius * -1 * ori, adjusted_y + radius * 1.5);
+	fin.lineTo( adjusted_x + radius * -0.5 * ori, adjusted_y + radius * 0);
+	fin.lineTo( adjusted_x + radius * -1 * ori, adjusted_y + radius * -1.5);
+	fin.lineTo( adjusted_x + radius * 0 * ori, adjusted_y + radius * -1);
+	fin.lineTo( adjusted_x + radius * 0 * ori, adjusted_y + radius * 1);
+	ctx.fillStyle = fish.body_color;
+	ctx.fill(fin);
+		
+	// Fish head
+	ctx.beginPath();
+	ctx.arc( adjusted_x , adjusted_y , radius , 0 , 2 * Math.PI );
+	ctx.fillStyle = fish.body_color;
+	ctx.fill();
+		
+	// Fish eyeball
+	ctx.beginPath();
+	ctx.arc( adjusted_x + radius * 0.5 * ori, adjusted_y + radius * -0.5, radius / 4, 0 , 2 * Math.PI );
+	ctx.fillStyle = "#FFFFFF";
+	ctx.fill();
+		
+	// Fish pupil
+	ctx.beginPath();
+	ctx.arc( adjusted_x + radius * 0.6 * ori, adjusted_y + radius * -0.6, radius / 8, 0 , 2 * Math.PI );
+	ctx.fillStyle = "#000000";
+	ctx.fill();
+	
+}
+
+function canEat(subj, obj) {
+	/* Returns true if subject can eat object */
+	if (obj.type == "Donut") {
+		return true;
+	} else if ((subj.type == "Fish") && (obj.type == "Fish")) {
+		if ((subj.tail_color != obj.tail_color) && (subj.mass > obj.mass * 2)) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+}
+
+function supply_fish() {
+
+	fish_count = 0;
+	for (id in entities) {
+		if (entities[id].type === "Fish") {
+			fish_count++;
+		}
+	}
+	
+	if (fish_count < fish_max_pop) {
+		entities.push(new Fish(Math.random() * window.innerWidth,
+							   Math.random() * window.innerHeight,
+							   0, 0));
+	}
+}
+
+function add_donut() {
+	entities.push(new Donut(50, 50))
+}
+
+function mouse_down(event) {
+	canvas_x = event.x - canvas.offsetLeft;
+	canvas_y = event.y - canvas.offsetTop;
+	entities.push(new Donut(canvas_x, canvas_y));
+}
+
+function random_feed() {
+	entities.push(new Donut(Math.random() * window.innerWidth, Math.random() * window.innerHeight))
+}
+
+function toggle_autofeeder() {
+	if (!auto_feed) {
+		auto_feed = setInterval(random_feed, 250);
+	} else {
+		clearInterval(auto_feed);
+		auto_feed = null;
+	}
+
+}
+
+var canvas = document.getElementById("myCanvas");
+canvas.addEventListener('click', mouse_down, false);
+canvas.onmousedown = function(){return false;}; // stops double-click problem
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+var ctx = canvas.getContext("2d");
+
+var entities = [];
+
+var TANK_MARGIN = 25;
+var current_time = new Date();
+
+var i = 0;
+
+var updater = setInterval(main_loop, 1)
+var fish_adder = setInterval(supply_fish, 10)
+
+var auto_feed = false;
+
+var fish_max_pop = 150;
+
+</script>
+
+</body>
+</html>
+
