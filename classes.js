@@ -6,7 +6,7 @@ function Donut(x, y) {
 	
 	this.x = x;
 	this.y = y;
-	this.mass = 100;
+	this.mass = 10;
 	
 	this.move = function() {
 		// Attempts movement, environment permitting
