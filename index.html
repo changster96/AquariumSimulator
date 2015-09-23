@@ -156,10 +156,10 @@ function canEat(subj, obj) {
 	if (obj.type == "Donut") {
 		return true;
 	} else if ((subj.type == "Fish") && (obj.type == "Fish")) {
-		if ((subj.tail_color != obj.tail_color) && (subj.mass > obj.mass * 2)) {
+		if (subj.tail_color != obj.tail_color) {
 			return true;
 		} else {
-			return false;
+			return  (subj.mass > obj.mass * 2);
 		}
 	} else {
 		return false;
