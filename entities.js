@@ -1,11 +1,29 @@
-// Defining classes:
+/**
+ * All the entity classes that go in the tank!
+ */
 
-function Donut(x, y) {
-
-	this.type = "Donut";
-	
+/**
+ * Generic entity function.
+ */
+var Entity = function(x, y) {
+	this.type = "Generic Entity"
 	this.x = x;
 	this.y = y;
+	this.mass = 10;
+}
+Entity.prototype.move = function(dt) {
+	/**
+	 * Moves entity around.
+	 * Takes in a time-step, returns a tuple.
+	 */
+	
+	return [0, 0]
+}
+
+var Donut = function(x, y) {
+
+	Entity.call(this, x, y);
+	this.type = "Donut";
 	this.mass = 10;
 	
 	this.move = function() {
@@ -20,6 +38,7 @@ function Donut(x, y) {
 		ctx.stroke();
 	}
 }
+
 
 function Fish(x, y, dx, dy) {
 	
