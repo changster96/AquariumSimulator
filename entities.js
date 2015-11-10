@@ -11,29 +11,34 @@ var Entity = function(x, y) {
 	this.y = y;
 	this.mass = 10;
 }
+
+/**
+ * Moves entity around.
+ * Takes in a time-step, returns a tuple.
+ */
 Entity.prototype.move = function(dt) {
-	/**
-	 * Moves entity around.
-	 * Takes in a time-step, returns a tuple.
-	 */
-	
 	return [0, 0]
 }
 
+/**
+ * Entity 1: Donut. Does nothing but sink.
+ */
 var Donut = function(x, y) {
-
 	Entity.call(this, x, y);
 	this.type = "Donut";
 	this.mass = 10;
-	
-	
-	
-	
 }
+
+/**
+ * Aforementioned falling.
+ */
 Donut.prototype.move = function() {
 	// Attempts movement, environment permitting
 	return [0, 50];
 }
+/**
+ * Draws a cute little circle.
+ */ 
 Donut.prototype.draw = function() {
 	ctx.strokeStyle = "#880000";
 	ctx.beginPath();
@@ -41,7 +46,9 @@ Donut.prototype.draw = function() {
 	ctx.stroke();
 }
 
-
+/**
+ * Entity 2: Fish. Chases food.
+ */
 function Fish(x, y, dx, dy) {
 	
 	this.type = "Fish";
@@ -66,15 +73,11 @@ function Fish(x, y, dx, dy) {
 	this.body_color = "#FFA500";
 	this.tail_color = tail_colors[Math.floor(Math.random()*tail_colors.length)]
 	
-	
-	
-	
-	
-	
-	
-	
-	
 }
+
+/**
+ * Moves fish around.
+ */
 Fish.prototype.move = function(dt) {
 	
 	this.dx += this.dx * (-0.1);
@@ -92,6 +95,10 @@ Fish.prototype.move = function(dt) {
 	
 	return [this.dx, this.dy];
 }
+
+/**
+ * Chooses a direction for the fish to go.
+ */
 Fish.prototype.find_move = function() {
 	// Attempts movement
 	
@@ -160,6 +167,10 @@ Fish.prototype.find_move = function() {
 	
 	return [this.dx, this.dy];
 }
+
+/**
+ * Given target fish, chooses an action.
+ */
 Fish.prototype.determine_action = function(target) {
 	/* Returns "Eat", "Flee", or "Socialize" */
 	if ((target.type == "Donut") || (target.mass < this.mass / 2)) {
@@ -172,6 +183,10 @@ Fish.prototype.determine_action = function(target) {
 		return "Socialize";
 	}
 }
+
+/**
+ * TODO: Get rid of this function.
+ */
 Fish.prototype.draw = function(accumulator) {
 	draw_fish(this, accumulator);
 }

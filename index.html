@@ -19,12 +19,13 @@ html, body {
 
 // Environment methods
 
-var dt = 1.0 / 20;
+var dt = 1.0 / 20; // Time-step. Measured in seconds.
 var t = 0.0;
 var accumulator = 0.0;
 
 /**
  * Main loop. Runs physics and renderer separately.
+ * TODO: Annotate better, change to state programming?
  */
 function main() {
 	new_time = new Date();
@@ -44,7 +45,9 @@ function main() {
 	draw(accumulator);
 }
 
-
+/**
+ * Update physics by time-step. Deterministic.
+ */
 function update(dt) {
 
 	supply_fish();
@@ -76,13 +79,12 @@ function update(dt) {
 			}
 		}
 	}
-	
-	
-
 }
 
-function draw(acculumator) {
-	
+/**
+ * Draws members of tank.
+ */
+function draw(acculumator) {	
 	// clear screen
 	ctx.fillStyle = "#334D66";
 	ctx.fillRect( 0 , 0 , window.innerWidth , window.innerHeight );
@@ -91,11 +93,11 @@ function draw(acculumator) {
 	for (fish in entities) {
 		entities[fish].draw(acculumator);
 	}	
-	
-	
-	
 }
 
+/**
+ * Draws a fish.
+ */
 function draw_fish(fish, accumulator) {
 	radius = Math.sqrt(fish.mass);
 	
@@ -110,8 +112,6 @@ function draw_fish(fish, accumulator) {
 	
 	adjusted_x = fish.x + fish.dx * accumulator + 0.5 * fish.ddx * Math.pow(accumulator, 2);
 	adjusted_y = fish.y + fish.dy * accumulator + 0.5 * fish.ddy * Math.pow(accumulator, 2);
-	//adjusted_x = fish.x;
-	//adjusted_y = fish.y;	
 	
 	var tail = new Path2D();
 	tail.moveTo(adjusted_x , adjusted_y);
