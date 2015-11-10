@@ -14,7 +14,7 @@ html, body {
   overflow: hidden;
 }
 </style>
-<script src="classes.js"></script>
+<script src="entities.js"></script>
 <script>
 
 // Environment methods
@@ -23,8 +23,10 @@ var dt = 1.0 / 20;
 var t = 0.0;
 var accumulator = 0.0;
 
-function main_loop()
-{
+/**
+ * Main loop. Runs physics and renderer separately.
+ */
+function main() {
 	new_time = new Date();
     frame_time = (new_time - current_time) / 1000;
 	
@@ -45,6 +47,7 @@ function main_loop()
 
 function update(dt) {
 
+	supply_fish();
 	//move fish
 	for (fish in entities) {
 		
@@ -74,13 +77,15 @@ function update(dt) {
 		}
 	}
 	
-	// clear screen
-	ctx.fillStyle = "#334D66";
-	ctx.fillRect( 0 , 0 , window.innerWidth , window.innerHeight );
+	
 
 }
 
 function draw(acculumator) {
+	
+	// clear screen
+	ctx.fillStyle = "#334D66";
+	ctx.fillRect( 0 , 0 , window.innerWidth , window.innerHeight );
 	
 	// draw fish
 	for (fish in entities) {
@@ -221,8 +226,7 @@ var current_time = new Date();
 
 var i = 0;
 
-var updater = setInterval(main_loop, 1)
-var fish_adder = setInterval(supply_fish, 10)
+var updater = setInterval(main, 1)
 
 var auto_feed = false;
 
