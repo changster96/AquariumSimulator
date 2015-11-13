@@ -5,10 +5,12 @@
 /**
  * Generic entity function.
  */
-var Entity = function(x, y) {
+var Entity = function(x, y, dx, dy) {
 	this.type = "Generic Entity"
 	this.x = x;
 	this.y = y;
+	this.dx = dx;
+	this.dy = dy;
 	this.mass = 10;
 }
 
@@ -16,15 +18,15 @@ var Entity = function(x, y) {
  * Moves entity around.
  * Takes in a time-step, returns a tuple.
  */
-Entity.prototype.move = function(dt) {
-	return [0, 0]
+Entity.prototype.tryMove = function(dt) {
+	return [this.dx, this.dy]
 }
 
 /**
- * Entity 1: Donut. Does nothing but sink.
+ * Entity 0: Donut. Does nothing but sink.
  */
 var Donut = function(x, y) {
-	Entity.call(this, x, y);
+	Entity.call(this, x, y, 0, 50);
 	this.type = "Donut";
 	this.mass = 10;
 }
@@ -32,161 +34,128 @@ var Donut = function(x, y) {
 /**
  * Aforementioned falling.
  */
-Donut.prototype.move = function() {
+Donut.prototype.tryMove = function(dt) {
 	// Attempts movement, environment permitting
-	return [0, 50];
-}
-/**
- * Draws a cute little circle.
- */ 
-Donut.prototype.draw = function() {
-	ctx.strokeStyle = "#880000";
-	ctx.beginPath();
-	ctx.arc( this.x , this.y , 3 , 0 , 2 * Math.PI);
-	ctx.stroke();
+	return [this.dx, this.dy];
 }
 
 /**
- * Entity 2: Fish. Chases food.
+ * Entity 1: Fish. Chases donuts and hangs out.
  */
-function Fish(x, y, dx, dy) {
-	
+var Fish = function(x, y) {
+	Entity.call(this, x, y, 0, 50);
 	this.type = "Fish";
-	
-	this.x = x;
-	this.y = y;
-	this.dx = 0;
-	this.dy = 0;
+	this.mass = 10;
 	this.ddx = 0;
 	this.ddy = 0;
+	this.cruisingAccel = 25 + Math.random() * 50;
+	this.topAccel = 250 + Math.random() * 500;
+	this.eyesight = 50 + Math.random() * 100;
 	
-	this.eyesight = 250 + Math.random() * 250 + Math.random() * 250;
-	this.hunger = Math.random() * 10000;
-	this.socialness = 0.5;
-	this.personalspace = Math.random() * 75 + Math.random() * 75;
-	this.danger_sense = Math.random() * 500000 + Math.random() * 500000;
-	this.top_accel = Math.random() * 1000 + 1000;
-	this.mass = Math.random() * 40 + Math.random() * 40 + 20;
-	this.move_timer = [0, 0.2 + Math.random() * 0.3]; // Zero out of one second
-	
-	tail_colors = ["#FF0000", "#FF00FF", "#0000FF"];
-	this.body_color = "#FFA500";
-	this.tail_color = tail_colors[Math.floor(Math.random()*tail_colors.length)]
-	
+	tailColors = ["#FF0000", "#FF00FF", "#0000FF"];
+	this.bodyColor = "#FFA500";
+	this.tailColor = tailColors[ Math.floor( Math.random() * tailColors.length ) ]
 }
 
 /**
- * Moves fish around.
+ * Chases donuts.
  */
-Fish.prototype.move = function(dt) {
+Fish.prototype.tryMove = function(dt, visibleDonuts, visibleSharks) {
 	
-	this.dx += this.dx * (-0.1);
-	this.dy += this.dy * (-0.1);
+	this.dx *= Math.pow(0.25, dt);
+	this.dy *= Math.pow(0.25, dt);
 	
-	if (this.mass > 100) {this.mass *= 0.999;}
+	if (this.ddx == 0) {
+		randomNum = -5 + Math.random() * 10;
+		this.ddx = randomNum / Math.abs(randomNum);
+	}
+	if (this.ddy == 0) {
+		randomNum = -5 + Math.random() * 10;
+		this.ddy = randomNum / Math.abs(randomNum);
+	}
+	this.ddx = this.ddx / (Math.abs(this.ddx)) * this.cruisingAccel;
+	this.ddy = this.ddy / (Math.abs(this.ddy)) * this.cruisingAccel / 10;
+	best_direction = [0.0, 0];
 	
-	this.move_timer[0] += dt;
+	visibleDonuts.forEach(function(donut) {
+		distance = Tank.getDistance(donut.x - this.x, donut.y - this.y);
+		best_direction[0] += (donut.x - this.x) / distance;
+		best_direction[1] += (donut.y - this.y) / distance;
+	}, this);
 	
-	if (this.move_timer[0] > this.move_timer[1]) {
-		best_move = this.find_move();
-		this.move_timer[0] = 0;
-		return best_move;
+	visibleSharks.forEach(function(shark) {
+		distance = Tank.getDistance(shark.x - this.x, shark.y - this.y);
+		best_direction[0] += (shark.x - this.x) / distance * -1;
+		best_direction[1] += (shark.y - this.y) / distance * -1;
+	}, this);
+	
+	attempted_speed = Tank.getDistance(best_direction[0], best_direction[1]);
+	if (attempted_speed != 0.0) {
+		this.ddx = best_direction[0] / attempted_speed * this.topAccel;
+		this.ddy = best_direction[1] / attempted_speed * this.topAccel;
 	}
 	
+	this.dx += this.ddx * dt;
+	this.dy += this.ddy * dt;
 	return [this.dx, this.dy];
+	
 }
 
 /**
- * Chooses a direction for the fish to go.
+ * Entity 2: Shark. Chases fish.
  */
-Fish.prototype.find_move = function() {
-	// Attempts movement
+var Shark = function(x, y) {
+	Entity.call(this, x, y, 0, 50);
+	this.type = "Shark";
+	this.mass = 1000;
+	this.minMass = 1000;
+	this.ddx = 0;
+	this.ddy = 0;
+	this.cruisingAccel = 25 + Math.random() * 50;
+	this.topAccel = 125 + Math.random() * 250;
+	this.eyesight = 100 + Math.random() * 200;
 	
+	tailColors = ["#4444FF"];
+	this.bodyColor = "#8888FF";
+	this.tailColor = tailColors[ Math.floor( Math.random() * tailColors.length ) ]
+}
+
+/**
+ * Chases fish.
+ */
+Shark.prototype.tryMove = function(dt, visibleFish) {
 	
+	this.dx *= Math.pow(0.25, dt);
+	this.dy *= Math.pow(0.25, dt);
+	this.mass *= Math.pow(0.9, dt);
+	this.mass = this.mass < this.minMass ? this.minMass : this.mass;
 	
-	best_direction = [0, 0];
+	if (this.ddx == 0) {
+		randomNum = -5 + Math.random() * 10;
+		this.ddx = randomNum / Math.abs(randomNum);
+	}
+	if (this.ddy == 0) {
+		randomNum = -5 + Math.random() * 10;
+		this.ddy = randomNum / Math.abs(randomNum);
+	}
+	this.ddx = this.ddx / (Math.abs(this.ddx)) * this.cruisingAccel;
+	this.ddy = this.ddy / (Math.abs(this.ddy)) * this.cruisingAccel / 10;
+	best_direction = [0.0, 0];
 	
-	for (id in entities) {
-		x_distance = entities[id].x - this.x;
-		y_distance = entities[id].y - this.y;
-		
-		if (x_distance > window.innerWidth / 2) {
-			x_distance = x_distance - window.innerWidth;
-		} else if (x_distance < -1 * window.innerWidth / 2) {
-			x_distance = x_distance + window.innerWidth;
-		}
-		
-		if (y_distance > window.innerHeight / 2) {
-			y_distance = y_distance - window.innerHeight;
-		} else if (y_distance < -1 * window.innerHeight / 2) {
-			y_distance = y_distance + window.innerHeight;
-		}
-		
-		distance = Math.sqrt(Math.pow(x_distance, 2) +
-							 Math.pow(y_distance, 2));
-							 
-		if ((distance > 0) && (distance < this.eyesight)) {
-			if (this.determine_action(entities[id]) == "Eat") {
-				// target is edible!
-				coefficient = entities[id].mass / distance * this.hunger;
-				best_direction[0] += x_distance * coefficient;
-				best_direction[1] += y_distance * coefficient;
-			} else if (this.determine_action(entities[id]) == "Flee"){
-				// target can eat this!
-				coefficient =  -1 * this.danger_sense / Math.pow(distance, 2);
-				best_direction[0] += x_distance * coefficient;
-				best_direction[1] += y_distance * coefficient;
-			} else {
-				// target is just there I guess
-				coefficient = 0;
-				if (distance > (this.personalspace + entities[id].personalspace)) {
-					coefficient += (this.socialness + entities[id].socialness) * entities[id].mass / distance;
-					if (this.tail_color == entities[id].tail_color) {
-						// import racism
-						coefficient += Math.abs(coefficient * 0.5);
-					}
-				}
-				
-				best_direction[0] += x_distance * coefficient;
-				best_direction[1] += y_distance * coefficient;
-			} 
-		}
+	visibleFish.forEach(function(fish) {
+		distance = Tank.getDistance(fish.x - this.x, fish.y - this.y);
+		best_direction[0] += (fish.x - this.x) / distance;
+		best_direction[1] += (fish.y - this.y) / distance;
+	}, this);
+	
+	attempted_speed = Tank.getDistance(best_direction[0], best_direction[1]);
+	if (attempted_speed != 0.0) {
+		this.ddx = best_direction[0] / attempted_speed * this.topAccel;
+		this.ddy = best_direction[1] / attempted_speed * this.topAccel;
 	}
 	
-	best_direction_power = Math.sqrt(Math.pow(best_direction[0], 2) + 
-									 Math.pow(best_direction[1], 2));
-	if (best_direction_power != this.top_accel) {
-		best_direction[0] = best_direction[0] * this.top_accel / best_direction_power;
-		best_direction[1] = best_direction[1] * this.top_accel / best_direction_power;
-	}
-	
-	this.ddx = best_direction[0];
-	this.ddy = best_direction[1];
-	this.dx += this.ddx / Math.pow(this.mass, 0.5) * this.move_timer[0];
-	this.dy += this.ddy / Math.pow(this.mass, 0.5) * this.move_timer[0];
-	
+	this.dx += this.ddx * dt;
+	this.dy += this.ddy * dt;
 	return [this.dx, this.dy];
-}
-
-/**
- * Given target fish, chooses an action.
- */
-Fish.prototype.determine_action = function(target) {
-	/* Returns "Eat", "Flee", or "Socialize" */
-	if ((target.type == "Donut") || (target.mass < this.mass / 2)) {
-		return "Eat";
-	} else if (target.tail_color == this.tail_color) {
-		return "Socialize";
-	} else if (target.mass > this.mass * 2) {
-		return "Flee";
-	} else {
-		return "Socialize";
-	}
-}
-
-/**
- * TODO: Get rid of this function.
- */
-Fish.prototype.draw = function(accumulator) {
-	draw_fish(this, accumulator);
+	
 }
