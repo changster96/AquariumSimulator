@@ -45,7 +45,7 @@ Donut.prototype.tryMove = function(dt) {
 var Fish = function(x, y) {
 	Entity.call(this, x, y, 0, 50);
 	this.type = "Fish";
-	this.mass = 10;
+	this.mass = 30;
 	this.ddx = 0;
 	this.ddy = 0;
 	this.cruisingAccel = 25 + Math.random() * 50;
@@ -78,15 +78,17 @@ Fish.prototype.tryMove = function(dt, visibleDonuts, visibleSharks) {
 	best_direction = [0.0, 0];
 	
 	visibleDonuts.forEach(function(donut) {
-		distance = Tank.getDistance(donut.x - this.x, donut.y - this.y);
-		best_direction[0] += (donut.x - this.x) / distance;
-		best_direction[1] += (donut.y - this.y) / distance;
+		displacement = myTank.getDisplacement(this, donut);
+		distance = displacement[2];
+		best_direction[0] += displacement[0] / distance;
+		best_direction[1] += displacement[1] / distance;
 	}, this);
 	
 	visibleSharks.forEach(function(shark) {
-		distance = Tank.getDistance(shark.x - this.x, shark.y - this.y);
-		best_direction[0] += (shark.x - this.x) / distance * -1;
-		best_direction[1] += (shark.y - this.y) / distance * -1;
+		displacement = myTank.getDisplacement(this, shark);
+		distance = displacement[2];
+		best_direction[0] += displacement[0] * -1 / distance;
+		best_direction[1] += displacement[1] * -1 / distance;
 	}, this);
 	
 	attempted_speed = Tank.getDistance(best_direction[0], best_direction[1]);
@@ -143,9 +145,10 @@ Shark.prototype.tryMove = function(dt, visibleFish) {
 	best_direction = [0.0, 0];
 	
 	visibleFish.forEach(function(fish) {
-		distance = Tank.getDistance(fish.x - this.x, fish.y - this.y);
-		best_direction[0] += (fish.x - this.x) / distance;
-		best_direction[1] += (fish.y - this.y) / distance;
+		displacement = myTank.getDisplacement(this, fish);
+		distance = displacement[2];
+		best_direction[0] += displacement[0] * fish.mass / distance;
+		best_direction[1] += displacement[1] * fish.mass / distance;
 	}, this);
 	
 	attempted_speed = Tank.getDistance(best_direction[0], best_direction[1]);
