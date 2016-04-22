@@ -1,12 +1,4 @@
-var Viewer = function() {
-	
-	/**
-	 * The main screen that the game will be on is a square.
-	 * This square will have its own coordinates: [0, 100] by [0, 100].
-	 */
-	 
-	
-}
+var Viewer = function() {}
 
 Viewer.prototype.draw = function(partialFrameTime) {
 	
@@ -15,16 +7,19 @@ Viewer.prototype.draw = function(partialFrameTime) {
 	ctx.fillRect( 0 , 0 , window.innerWidth , window.innerHeight );
 
 	// Use respective draw functions for each fish.
-	myModel.entities[0].forEach(function(donut) {draw_donut(donut, partialFrameTime);});
-	myModel.entities[1].forEach(function(fish) {draw_fish(fish, partialFrameTime);});
-	myModel.entities[2].forEach(function(shark) {draw_fish(shark, partialFrameTime);});
+	var allFish = myModel.entities[1].concat(myModel.entities[2]);
+	myModel.entities[0].forEach(function(donut) {draw_donut(donut);});
+	//myModel.entities[1].forEach(function(fish) {draw_fish(fish);});
+	//myModel.entities[2].forEach(function(shark) {draw_fish(shark);});
+	allFish.forEach(function(fish) { draw_fish(fish); });
 }
 
 var draw_donut = function(donut, partialFrameTime) {
 	ctx.strokeStyle = "#880000";
 	ctx.beginPath();
-	ctx.arc( donut.x + donut.dx * partialFrameTime,
-			 donut.y + donut.dy * partialFrameTime,
+	donutPosition = donut.getPosition();
+	ctx.arc( donutPosition.x,
+			 donutPosition.y,
 			 3 , 0 , 2 * Math.PI );
 	ctx.stroke();
 };
@@ -37,8 +32,10 @@ var draw_fish = function(fish, accumulator) {
 	
 	var ori = ((fish.ddx >= 0) ? 1 : -1);
 	
-	adjusted_x = fish.x + fish.dx * accumulator + 0.5 * fish.ddx * Math.pow(accumulator, 2);
-	adjusted_y = fish.y + fish.dy * accumulator + 0.5 * fish.ddy * Math.pow(accumulator, 2);
+	position = fish.getPosition();
+	
+	adjusted_x = position.x;
+	adjusted_y = position.y
 	
 	var tail = new Path2D();
 	tail.moveTo(adjusted_x , adjusted_y);

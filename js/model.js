@@ -6,24 +6,33 @@ var Model = function() {
 	this.entities = [[], [], []]; // Type-hashed!
 	this.wrapped = {x : true, y : false};
 }
-Model.prototype.addDonut = function(x, y) {
-	this.entities[0].push(new Donut(x, y))
+Model.prototype.addDonut = function(position) {
+	this.entities[0].push(new Donut(position))
 }
 Model.prototype.update = function(dt) {
 	
 	// supply donut
-	if (this.entities[0].length < 5) {
-		this.addDonut(Math.random() * window.innerWidth, Math.random() * window.innerHeight);
+	if (this.entities[0].length < 10) {
+		var x = Math.random() * window.innerWidth;
+		var y = Math.random() * window.innerHeight;
+		var position = Vector.fromComponents(x, y);
+		this.addDonut(position);
 	}
 	
 	// supply fish!
-	if (this.entities[1].length < 500) {
-		this.entities[1].push(new Fish(Math.random() * window.innerWidth, Math.random() * window.innerHeight, 0, 0));
+	if (this.entities[1].length < 100) {
+		var x = Math.random() * window.innerWidth;
+		var y = Math.random() * window.innerHeight
+		var position = Vector.fromComponents(x, y);
+		this.entities[1].push(new Fish(position, Vector.ZERO));
 	}
 	
 	// supply sharks!
 	if (this.entities[2].length < 3) {
-		this.entities[2].push(new Shark(Math.random() * window.innerWidth, Math.random() * window.innerHeight, 0, 0));
+		var x = Math.random() * window.innerWidth;
+		var y = Math.random() * window.innerHeight
+		var position = Vector.fromComponents(x, y);
+		this.entities[2].push(new Shark(position, Vector.ZERO));
 	}
 	
 	// Moving entities.
@@ -36,10 +45,10 @@ Model.prototype.update = function(dt) {
 	this.entities[1].forEach(function(fish) {
 		
 		var visibleDonuts = this.entities[0].filter(function (donut) {
-				return this.getDisplacement(fish, donut)[2] < fish.eyesight;
+				return this.getDisplacement(fish, donut).norm() < fish.eyesight;
 			}, this);
 		var visibleSharks = this.entities[2].filter(function (shark) {
-				return this.getDisplacement(fish, shark)[2] < fish.eyesight + Math.sqrt(shark.mass);
+				return this.getDisplacement(fish, shark).norm() < fish.eyesight + Math.sqrt(shark.mass);
 			}, this);
 		attemptedMove = fish.tryMove(dt, visibleDonuts, visibleSharks);
 		this.doMove(fish, attemptedMove, dt);
@@ -49,7 +58,7 @@ Model.prototype.update = function(dt) {
 	this.entities[2].forEach(function(shark) {
 		
 		var visibleFish = this.entities[1].filter(function (fish) {
-				return this.getDisplacement(shark, fish)[2] < shark.eyesight;
+				return this.getDisplacement(shark, fish).norm() < shark.eyesight;
 			}, this);
 		attemptedMove = shark.tryMove(dt, visibleFish);
 		this.doMove(shark, attemptedMove, dt);
@@ -65,7 +74,7 @@ Model.prototype.update = function(dt) {
 Model.prototype.checkForEat = function(predatorList, preyList) {
 	predatorList.forEach(function(predator) {
 		preyList.forEach(function(prey) {
-			if (this.getDisplacement(predator, prey)[2] < Math.sqrt(predator.mass)) {
+			if (this.getDisplacement(predator, prey).norm() < Math.sqrt(predator.mass)) {
 				predator.mass += prey.mass;
 				var index = preyList.indexOf(prey);
 				preyList.splice(index, 1);
@@ -76,7 +85,6 @@ Model.prototype.checkForEat = function(predatorList, preyList) {
 
 Model.prototype.doMove = function(entity, attemptedMov, dt) {
 	var windowSize = {x : window.innerWidth, y : window.innerHeight};
-	attemptedMove = {x : attemptedMove[0], y : attemptedMove[1]};
 	["x", "y"].forEach(function (dim) {
 		if (this.wrapped[dim] === true) {
 			entity[dim] += attemptedMove[dim] * dt;
@@ -84,10 +92,10 @@ Model.prototype.doMove = function(entity, attemptedMov, dt) {
 		} else {
 			if (entity[dim] + attemptedMove[dim] * dt < 0) {
 				entity[dim] = 0;
-				entity["d" + dim] *= -2;
+				entity.velocity[dim] *= -2;
 			} else if (entity[dim] + attemptedMove[dim] * dt > windowSize[dim]) {
 				entity[dim] = windowSize[dim];
-				entity["d" + dim] *= -2;
+				entity.velocity[dim] *= -2;
 			} else {
 				entity[dim] += attemptedMove[dim] * dt;
 			}
@@ -109,7 +117,8 @@ Model.prototype.getDisplacement = function(obj1, obj2) {
 			}
 		}
 	}, this);
-	return [displacement["x"], displacement["y"], Model.getDistance(displacement["x"], displacement["y"])];
+	// return [displacement["x"], displacement["y"], Model.getDistance(displacement["x"], displacement["y"])];
+	return Vector.fromComponents(displacement["x"], displacement["y"]);
 };
 
 Model.getDistance = function(leg1, leg2) {

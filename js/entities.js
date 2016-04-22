@@ -5,13 +5,23 @@
 /**
  * Generic entity function.
  */
-var Entity = function(x, y, dx, dy) {
+var Entity = function(position, velocity) {
 	this.type = "Generic Entity"
-	this.x = x;
-	this.y = y;
-	this.dx = dx;
-	this.dy = dy;
+	this.position = position;
+	this.x = position.x;
+	this.y = position.y;
+	this.velocity = velocity;
+	this.dx = velocity.x;
+	this.dy = velocity.y;
 	this.mass = 10;
+}
+
+Entity.prototype.getPosition = function() {
+	return Vector.fromComponents(this.x, this.y);
+}
+
+Entity.prototype.getVelocity = function() {
+	return this.velocity;
 }
 
 /**
@@ -19,35 +29,31 @@ var Entity = function(x, y, dx, dy) {
  * Takes in a time-step, returns a tuple.
  */
 Entity.prototype.tryMove = function(dt) {
-	return [this.dx, this.dy]
+	return this.getVelocity();
 }
 
 /**
  * Entity 0: Donut. Does nothing but sink.
  */
-var Donut = function(x, y) {
-	Entity.call(this, x, y, 0, 50);
+var Donut = function(position) {
+	Entity.call(this, position, Vector.fromComponents(0, 50)); // (0, 50?)
 	this.type = "Donut";
 	this.mass = 10;
 }
 
-/**
- * Aforementioned falling.
- */
-Donut.prototype.tryMove = function(dt) {
-	// Attempts movement, environment permitting
-	return [this.dx, this.dy];
-}
+Donut.prototype = Object.create(Entity.prototype);
 
 /**
  * Entity 1: Fish. Chases donuts and hangs out.
  */
-var Fish = function(x, y) {
-	Entity.call(this, x, y, 0, 50);
+var Fish = function(position) {
+	Entity.call(this, position, Vector.ZERO);
 	this.type = "Fish";
 	this.mass = 30;
+	this.acceleration = Vector.ZERO;
 	this.ddx = 0;
 	this.ddy = 0;
+	this.cruiseAngle = Math.floor(Math.random() * 2) * Math.PI + ((-0.15 + Math.random() * 0.3) * Math.PI);
 	this.cruisingAccel = 25 + Math.random() * 50;
 	this.topAccel = 250 + Math.random() * 500;
 	this.eyesight = 50 + Math.random() * 100;
@@ -56,58 +62,63 @@ var Fish = function(x, y) {
 	this.bodyColor = "#FFA500";
 	this.tailColor = tailColors[ Math.floor( Math.random() * tailColors.length ) ]
 }
+Fish.prototype = Object.create(Entity.prototype);
+
+Fish.prototype.getAcceleration = function() {
+	return Vector.fromComponents(this.ddx, this.ddy);
+}
 
 /**
  * Chases donuts.
  */
 Fish.prototype.tryMove = function(dt, visibleDonuts, visibleSharks) {
 	
-	this.dx *= Math.pow(0.25, dt);
-	this.dy *= Math.pow(0.25, dt);
+	//this.dx *= Math.pow(0.25, dt);
+	//this.dy *= Math.pow(0.25, dt);
+	this.velocity = this.velocity.scMult(Math.pow(0.25, dt));
 	
-	if (this.ddx == 0) {
-		randomNum = -5 + Math.random() * 10;
-		this.ddx = randomNum / Math.abs(randomNum);
-	}
-	if (this.ddy == 0) {
-		randomNum = -5 + Math.random() * 10;
-		this.ddy = randomNum / Math.abs(randomNum);
-	}
-	this.ddx = this.ddx / (Math.abs(this.ddx)) * this.cruisingAccel;
-	this.ddy = this.ddy / (Math.abs(this.ddy)) * this.cruisingAccel / 10;
-	best_direction = [0.0, 0];
+	
+	
+	
+	var best_direction = Vector.ZERO;
 	
 	visibleDonuts.forEach(function(donut) {
 		displacement = myModel.getDisplacement(this, donut);
-		distance = displacement[2];
-		best_direction[0] += displacement[0] / distance;
-		best_direction[1] += displacement[1] / distance;
+		best_direction = best_direction.add(displacement.scMult(1 / displacement.norm()));
 	}, this);
 	
 	visibleSharks.forEach(function(shark) {
 		displacement = myModel.getDisplacement(this, shark);
-		distance = displacement[2];
-		best_direction[0] += displacement[0] * -1 / distance;
-		best_direction[1] += displacement[1] * -1 / distance;
+		best_direction = best_direction.add(displacement.scMult(-1 / displacement.norm()));
 	}, this);
 	
-	attempted_speed = Model.getDistance(best_direction[0], best_direction[1]);
-	if (attempted_speed != 0.0) {
-		this.ddx = best_direction[0] / attempted_speed * this.topAccel;
-		this.ddy = best_direction[1] / attempted_speed * this.topAccel;
+	// console.log(best_direction);
+	
+	this.acceleration = best_direction.unit().scMult(this.topAccel)
+	
+	if (this.acceleration.norm() == 0.0) { // Lame!!
+		
+		
+		this.acceleration = Vector.fromPolar(this.cruisingAccel, this.cruiseAngle);
+		
+		this.ddx = this.acceleration.x
+		this.velocity = this.velocity.add(this.acceleration.scMult(dt));
+		return this.velocity;
 	}
 	
-	this.dx += this.ddx * dt;
-	this.dy += this.ddy * dt;
-	return [this.dx, this.dy];
+	this.ddx = this.acceleration.x
+	this.velocity = this.velocity.add(this.acceleration.scMult(dt));
+	
+	
+	return this.velocity;
 	
 }
 
 /**
  * Entity 2: Shark. Chases fish.
  */
-var Shark = function(x, y) {
-	Entity.call(this, x, y, 0, 50);
+var Shark = function(position) {
+	Entity.call(this, position, Vector.ZERO);
 	this.type = "Shark";
 	this.mass = 1000;
 	this.minMass = 1000;
@@ -122,43 +133,32 @@ var Shark = function(x, y) {
 	this.tailColor = tailColors[ Math.floor( Math.random() * tailColors.length ) ]
 }
 
+Shark.prototype = Object.create(Entity.prototype);
+
+
 /**
  * Chases fish.
  */
 Shark.prototype.tryMove = function(dt, visibleFish) {
 	
-	this.dx *= Math.pow(0.25, dt);
-	this.dy *= Math.pow(0.25, dt);
+	this.velocity = this.velocity.scMult(Math.pow(0.25, dt));
 	this.mass *= Math.pow(0.9, dt);
 	this.mass = this.mass < this.minMass ? this.minMass : this.mass;
 	
-	if (this.ddx == 0) {
-		randomNum = -5 + Math.random() * 10;
-		this.ddx = randomNum / Math.abs(randomNum);
-	}
-	if (this.ddy == 0) {
-		randomNum = -5 + Math.random() * 10;
-		this.ddy = randomNum / Math.abs(randomNum);
-	}
-	this.ddx = this.ddx / (Math.abs(this.ddx)) * this.cruisingAccel;
-	this.ddy = this.ddy / (Math.abs(this.ddy)) * this.cruisingAccel / 10;
-	best_direction = [0.0, 0];
+	var best_direction = Vector.ZERO;
 	
-	visibleFish.forEach(function(fish) {
-		displacement = myModel.getDisplacement(this, fish);
-		distance = displacement[2];
-		best_direction[0] += displacement[0] * fish.mass / distance;
-		best_direction[1] += displacement[1] * fish.mass / distance;
+	visibleFish.forEach(function(donut) {
+		displacement = myModel.getDisplacement(this, donut);
+		if (displacement.norm() != 0) {
+			best_direction = best_direction.add(displacement.scMult(1 / displacement.norm()));
+		}
 	}, this);
 	
-	attempted_speed = Model.getDistance(best_direction[0], best_direction[1]);
-	if (attempted_speed != 0.0) {
-		this.ddx = best_direction[0] / attempted_speed * this.topAccel;
-		this.ddy = best_direction[1] / attempted_speed * this.topAccel;
-	}
+	this.acceleration = best_direction.unit().scMult(this.topAccel)
 	
-	this.dx += this.ddx * dt;
-	this.dy += this.ddy * dt;
-	return [this.dx, this.dy];
+	this.ddx = this.acceleration.x
+	this.velocity = this.velocity.add(this.acceleration.scMult(dt));
 	
+	
+	return this.velocity;
 }

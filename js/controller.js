@@ -6,7 +6,9 @@ var Controller = function() {
 		
 		canvas_x = event.x - canvas.offsetLeft;
 		canvas_y = event.y - canvas.offsetTop;
-		myModel.addDonut(canvas_x, canvas_y);
+		
+		var position = Vector.fromComponents(canvas_x, canvas_y);
+		myModel.addDonut(position);
 		
 	}
 	
