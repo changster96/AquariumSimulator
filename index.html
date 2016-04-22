@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html>
+<head>
+<title>Happy Birthday, Lilian!</title>
+</head>
 <body>
 
 <canvas id="myCanvas">
@@ -14,54 +17,102 @@ html, body {
   overflow: hidden;
 }
 </style>
-<script src="entities.js"></script>
-<script src="tank.js"></script>
+
+<script src="js/model.js"></script>
+<script src="js/viewer.js"></script>
+<script src="js/controller.js"></script>
+<script src="js/lib/vector.js"></script>
+<script src="js/entities.js"></script>
+
 <script>
 
-// Environment methods
+/**
+ * 	Begin by creating our favorite singletons.
+ */
 
-var dt = 1.0 / 20; // Time-step. Measured in seconds.
-var t = 0.0;
-var accumulator = 0.0;
+var myController = new Controller();
+var myViewer = new Viewer();
+var myModel =  new Model(); // Fix me!
 
 /**
- * Main loop. Runs physics and renderer separately.
+ * 	Other important global variables (e.g. time-keeping, environment)
+ */
+
+var TIME_STEP = 1.0 / 60; // Time-step. Measured in seconds.
+var accumulator = 0.0;
+var currentTime = new Date();
+var currentDraw = new Date();
+
+/**
+ * 	Runs physics-model and rendering separately, but on same thread.
  */
 function main() {
-	new_time = new Date();
-    frame_time = (new_time - current_time) / 1000;
 	
-    if ( frame_time > 0.1 )
-        frame_time = 0.1;
-    current_time = new_time;
+	newTime = new Date();
+    frameTime = (newTime - currentTime) / 1000;
+	
+    if ( frameTime > 0.1 )
+        frameTime = 0.1;
+    currentTime = newTime;
 
-    accumulator += frame_time;
-    while ( accumulator >= dt )
+    accumulator += frameTime;
+    while ( accumulator >= TIME_STEP )
     {
-        myTank.update(dt);
-        t += dt;
-        accumulator -= dt;
+        myModel.update(TIME_STEP);
+        accumulator -= TIME_STEP;
     }
-	myTank.draw(accumulator); // accumulator passed in as a partial frame. For Anti-A purposes
+    
+	myViewer.draw(accumulator);
 }
 
-function mouse_down(event) {
-	canvas_x = event.x - canvas.offsetLeft;
-	canvas_y = event.y - canvas.offsetTop;
-	myTank.addDonut(canvas_x, canvas_y);
-}
+/**
+ * Canvas creation!
+ */
 
 var canvas = document.getElementById("myCanvas");
-canvas.addEventListener('click', mouse_down, false);
-canvas.onmousedown = function(){return false;}; // stops double-click problem
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
+canvas.onmousedown = function(){ return false; };
+
 var ctx = canvas.getContext("2d");
 
-var current_time = new Date();
-var myTank = new Tank();
-var mainLooper = setInterval(main, 1);
+/**
+ * Canvas event registration
+ */
+
+/** Event: Mousedown followed by mouseup. */
+canvas.addEventListener('click', function(event) {
+	myController["clickHandler"](event);
+}, false);
+
+/** Event: Left mousebutton press on the canvas.
+canvas.addEventListener('mousedown', function(event) {
+	myController["mousedownHandler"](event);
+}, false);*/
+
+/** Event: Left mousebutton release on the canvas.
+canvas.addEventListener('mouseup', function(event) {
+	myController["mouseupHandler"](event);
+}, false);*/
+
+/** Event: Any movement of the mouse over the canvas.
+canvas.addEventListener('mousemove', function(event) {
+	myController["mousemoveHandler"](event);
+}, false);*/
+
+/** Event: Movement of the mousewheel.
+canvas.addEventListener('mousewheel', function(event) {
+	myController["mousewheelHandler"](event);
+}, false);*/
+
+/** Event: Any key press.
+window.addEventListener('keydown', function(key) {
+	myController.keydownHandler(key);
+}, false);*/
+
+//myModel.start();
+var mainLooper = setInterval(main, 1000 * TIME_STEP);
 
 </script>
 
