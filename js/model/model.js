@@ -10,7 +10,7 @@ Model.prototype.addDonut = function(position) {
 	this.entities[0].push(new Donut(position))
 }
 Model.prototype.update = function(dt) {
-	
+
 	// supply donut
 	if (this.entities[0].length < 10) {
 		var x = Math.random() * window.innerWidth;
@@ -18,7 +18,7 @@ Model.prototype.update = function(dt) {
 		var position = Vector.fromComponents(x, y);
 		this.addDonut(position);
 	}
-	
+
 	// supply fish!
 	if (this.entities[1].length < 100) {
 		var x = Math.random() * window.innerWidth;
@@ -26,7 +26,7 @@ Model.prototype.update = function(dt) {
 		var position = Vector.fromComponents(x, y);
 		this.entities[1].push(new Fish(position, Vector.ZERO));
 	}
-	
+
 	// supply sharks!
 	if (this.entities[2].length < 3) {
 		var x = Math.random() * window.innerWidth;
@@ -34,39 +34,39 @@ Model.prototype.update = function(dt) {
 		var position = Vector.fromComponents(x, y);
 		this.entities[2].push(new Shark(position, Vector.ZERO));
 	}
-	
+
 	// Moving entities.
-	
+
 	this.entities[0].forEach(function(donut) {
 		attemptedMove = donut.tryMove(dt);
 		this.doMove(donut, attemptedMove, dt);
 	}, this);
-	
+
 	this.entities[1].forEach(function(fish) {
-		
+
 		var visibleDonuts = this.entities[0].filter(function (donut) {
 				return this.getDisplacement(fish, donut).norm() < fish.eyesight;
 			}, this);
 		var visibleSharks = this.entities[2].filter(function (shark) {
 				return this.getDisplacement(fish, shark).norm() < fish.eyesight + Math.sqrt(shark.mass);
 			}, this);
-		attemptedMove = fish.tryMove(dt, visibleDonuts, visibleSharks);
+		attemptedMove = fish.tryMove(this, dt, visibleDonuts, visibleSharks);
 		this.doMove(fish, attemptedMove, dt);
-		
+
 	}, this);
-	
+
 	this.entities[2].forEach(function(shark) {
-		
+
 		var visibleFish = this.entities[1].filter(function (fish) {
 				return this.getDisplacement(shark, fish).norm() < shark.eyesight;
 			}, this);
-		attemptedMove = shark.tryMove(dt, visibleFish);
+		attemptedMove = shark.tryMove(this, dt, visibleFish);
 		this.doMove(shark, attemptedMove, dt);
-		
+
 	}, this);
-	
+
 	// Collision detection.
-	
+
 	this.checkForEat(this.entities[1], this.entities[0]);
 	this.checkForEat(this.entities[2], this.entities[1]);
 };
