@@ -1,7 +1,7 @@
 /**
  * Entity 2: Shark. Chases fish.
  */
-var Shark = function(position) {
+function Shark(position) {
 	Entity.call(this, position, Vector.ZERO);
 	this.type = "Shark";
 	this.mass = 1000;

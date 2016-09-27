@@ -23,8 +23,8 @@ html, body {
 <script src="js/model/entity/donut.js"></script>
 <script src="js/model/entity/fish.js"></script>
 <script src="js/model/entity/shark.js"></script>
-<script src="js/view/viewer.js"></script>
-<script src="js/view/controller.js"></script>
+<script src="js/view/view.js"></script>
+<script src="js/view/renderer.js"></script>
 <script src="js/util/vector.js"></script>
 
 <script>
@@ -65,7 +65,7 @@ function main() {
         accumulator -= TIME_STEP;
     }
 
-	view.draw(accumulator);
+	view.draw();
 }
 
 /**

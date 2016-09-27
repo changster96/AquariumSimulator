@@ -2,7 +2,7 @@
  * Model: Stores everything.
  * The model part of MVC.
  */
-var Model = function() {
+function Model(view) {
 	this.entities = [[], [], []]; // Type-hashed!
 	this.wrapped = {x : true, y : false};
 }

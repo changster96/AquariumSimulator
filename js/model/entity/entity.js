@@ -1,7 +1,7 @@
 /**
  * Generic entity function.
  */
-var Entity = function(position, velocity) {
+function Entity(position, velocity) {
 	this.type = "Generic Entity"
 	this.position = position;
 	this.x = position.x;
