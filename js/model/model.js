@@ -87,17 +87,17 @@ Model.prototype.doMove = function(entity, attemptedMov, dt) {
 	var windowSize = {x : window.innerWidth, y : window.innerHeight};
 	["x", "y"].forEach(function (dim) {
 		if (this.wrapped[dim] === true) {
-			entity[dim] += attemptedMove[dim] * dt;
-			entity[dim] = (entity[dim] + windowSize[dim]) % windowSize[dim];
+			entity.position[dim] += attemptedMove[dim] * dt;
+			entity.position[dim] = (entity.position[dim] + windowSize[dim]) % windowSize[dim];
 		} else {
-			if (entity[dim] + attemptedMove[dim] * dt < 0) {
-				entity[dim] = 0;
+			if (entity.position[dim] + attemptedMove[dim] * dt < 0) {
+				entity.position[dim] = 0;
 				entity.velocity[dim] *= -2;
-			} else if (entity[dim] + attemptedMove[dim] * dt > windowSize[dim]) {
-				entity[dim] = windowSize[dim];
+			} else if (entity.position[dim] + attemptedMove[dim] * dt > windowSize[dim]) {
+				entity.position[dim] = windowSize[dim];
 				entity.velocity[dim] *= -2;
 			} else {
-				entity[dim] += attemptedMove[dim] * dt;
+				entity.position[dim] += attemptedMove[dim] * dt;
 			}
 		}
 	}, this);
@@ -108,7 +108,7 @@ Model.prototype.getDisplacement = function(obj1, obj2) {
 	var windowSize = {x : window.innerWidth, y : window.innerHeight};
 	var displacement = {};
 	["x", "y"].forEach(function (dim) {
-		displacement[dim] = obj2[dim] - obj1[dim];
+		displacement[dim] = obj2.position[dim] - obj1.position[dim];
 		if (this.wrapped[dim] == true) {
 			if (displacement[dim] > windowSize[dim] / 2) {
 				displacement[dim] = displacement[dim] - windowSize[dim];
@@ -117,7 +117,6 @@ Model.prototype.getDisplacement = function(obj1, obj2) {
 			}
 		}
 	}, this);
-	// return [displacement["x"], displacement["y"], Model.getDistance(displacement["x"], displacement["y"])];
 	return Vector.fromComponents(displacement["x"], displacement["y"]);
 };
 

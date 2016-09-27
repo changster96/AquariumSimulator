@@ -16,7 +16,7 @@ Renderer.draw_donut = function(donut, ctx) {
 Renderer.draw_fish = function(fish, ctx) {
 	radius = Math.sqrt(fish.mass);
 
-	var ori = ((fish.ddx >= 0) ? 1 : -1);
+	var ori = ((fish.acceleration.x >= 0) ? 1 : -1);
 
 	position = fish.getPosition();
 

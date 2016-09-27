@@ -6,8 +6,6 @@ function Shark(position) {
 	this.type = "Shark";
 	this.mass = 1000;
 	this.minMass = 1000;
-	this.ddx = 0;
-	this.ddy = 0;
 	this.cruisingAccel = 25 + Math.random() * 50;
 	this.topAccel = 125 + Math.random() * 250;
 	this.eyesight = 100 + Math.random() * 200;
@@ -40,7 +38,6 @@ Shark.prototype.tryMove = function(model, dt, visibleFish) {
 
 	this.acceleration = best_direction.unit().scMult(this.topAccel)
 
-	this.ddx = this.acceleration.x
 	this.velocity = this.velocity.add(this.acceleration.scMult(dt));
 
 
